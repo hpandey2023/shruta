@@ -1,0 +1,40 @@
+Alex Example
+0 minutes 3 seconds
+0:03
+Alex Example 0 minutes 3 seconds
+The purpose today is to choose the launch sequence for the sample project.
+Blair Example
+0 minutes 20 seconds
+0:20
+Blair Example 0 minutes 20 seconds
+Option A is ready and its test coverage reached 92 percent.
+Alex Example
+0 minutes 41 seconds
+0:41
+Alex Example 0 minutes 41 seconds
+We approve option A for the pilot starting on August 20.
+Blair Example
+1 minute 2 seconds
+1:02
+Blair Example 1 minute 2 seconds
+I will publish the pilot checklist by Friday.
+Casey Example
+1 minute 18 seconds
+1:18
+Casey Example 1 minute 18 seconds
+The unresolved question is whether the second region needs a separate review.
+Alex Example
+1 minute 40 seconds
+1:40
+Alex Example 1 minute 40 seconds
+Keep the second region outside the pilot until the risk review is complete.
+Casey Example
+2 minutes 1 second
+2:01
+Casey Example 2 minutes 1 second
+I will own the risk review, with a target of August 18.
+Alex Example
+2 minutes 20 seconds
+2:20
+Alex Example 2 minutes 20 seconds
+That closes the decision and the two follow-up actions.

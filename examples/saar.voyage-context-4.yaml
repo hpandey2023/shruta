@@ -1,0 +1,35 @@
+server:
+  name: transcript-context
+
+embedding:
+  provider: voyage
+  model: voyage-context-4
+  api_key_env: VOYAGE_API_KEY
+  dimensions: 1024
+  contextual_group_size: 32
+
+reranker:
+  provider: voyage
+  model: rerank-2.5
+  api_key_env: VOYAGE_API_KEY
+  top_k: 30
+
+lexical:
+  enabled: true
+
+qdrant:
+  mode: embedded
+  path: /absolute/path/to/transcript-context/.saar/voyage/qdrant
+  collection: transcript-context-voyage
+
+index:
+  state_path: /absolute/path/to/transcript-context/.saar/voyage/state.sqlite3
+  chunk_overlap_chars: 0
+
+sources:
+  - scope: transcript-evidence
+    path: /absolute/path/to/transcript-context/evidence
+    include: ["**/*.md"]
+  - scope: transcript-insights
+    path: /absolute/path/to/transcript-context/insights
+    include: ["**/*.md"]

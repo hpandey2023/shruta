@@ -1,0 +1,28 @@
+server:
+  name: transcript-context
+
+embedding:
+  provider: fastembed
+  model: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+
+reranker:
+  provider: none
+
+lexical:
+  enabled: true
+
+qdrant:
+  mode: embedded
+  path: /absolute/path/to/transcript-context/.saar/qdrant
+  collection: transcript-context
+
+index:
+  state_path: /absolute/path/to/transcript-context/.saar/state.sqlite3
+
+sources:
+  - scope: transcript-evidence
+    path: /absolute/path/to/transcript-context/evidence
+    include: ["**/*.md"]
+  - scope: transcript-insights
+    path: /absolute/path/to/transcript-context/insights
+    include: ["**/*.md"]

@@ -1,0 +1,67 @@
+{
+  "manifest_version": 3,
+  "name": "HF Transcript Capture",
+  "version": "0.6.0",
+  "description": "Captures Microsoft Teams recap transcripts as local, timestamped source material for retrieval.",
+  "permissions": [
+    "downloads",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://teams.microsoft.com/*",
+    "https://*.teams.microsoft.com/*",
+    "https://*.cloud.microsoft/*",
+    "https://*.sharepoint.com/*",
+    "https://*.microsoftstream.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://teams.microsoft.com/*",
+        "https://*.teams.microsoft.com/*",
+        "https://*.cloud.microsoft/*",
+        "https://*.sharepoint.com/*",
+        "https://*.microsoftstream.com/*"
+      ],
+      "js": [
+        "hook.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "match_about_blank": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://teams.microsoft.com/*",
+        "https://*.teams.microsoft.com/*",
+        "https://*.cloud.microsoft/*",
+        "https://*.sharepoint.com/*",
+        "https://*.microsoftstream.com/*"
+      ],
+      "js": [
+        "capture.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "action": {
+    "default_title": "HF Transcript Capture \u2014 click to force a DOM scan + diagnostics dump",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
