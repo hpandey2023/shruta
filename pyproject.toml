@@ -3,13 +3,13 @@ requires = ["hatchling>=1.26"]
 build-backend = "hatchling.build"
 
 [project]
-name = "hf-transcript-capture"
-version = "0.6.0"
-description = "Capture meeting transcripts, turn them into cited evidence, and prepare them for retrieval."
+name = "shruta-transcript"
+version = "0.7.0"
+description = "Capture Teams web transcripts, turn them into cited evidence, and prepare them for retrieval."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [{ name = "HF Transcript Capture contributors" }]
+authors = [{ name = "Shruta contributors" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "License :: OSI Approved :: MIT License",
@@ -20,14 +20,18 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/hpandey2023/shruta"
+Issues = "https://github.com/hpandey2023/shruta/issues"
+
 [project.scripts]
-hf-transcript = "hf_transcript.cli:main"
+shruta = "shruta.cli:main"
 
 [project.optional-dependencies]
 dev = ["build>=1.2", "pytest>=8.0", "ruff>=0.9"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/hf_transcript"]
+packages = ["src/shruta"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

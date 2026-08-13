@@ -1,17 +1,20 @@
-# HF Transcript Capture
+# Shruta
 
-HF Transcript Capture turns Microsoft Teams recap transcripts into focused, cited context for AI agents. The Chrome extension captures the transcript you can already view, the local processor converts it into timestamped evidence, and an optional agent creates a smaller insight note whose claims must cite that evidence. [Saar](https://github.com/hpandey2023/saar) can then retrieve only the relevant passages instead of loading entire transcripts into an agent's context window.
+Shruta turns Microsoft Teams recap transcripts into focused, cited context for AI agents. Its name comes from the Sanskrit *śruta*: something heard, learned, or reported. The Chrome extension captures the transcript you can already view, the local processor converts it into timestamped evidence, and an optional agent creates a smaller insight note whose claims must cite that evidence. [Saar](https://github.com/hpandey2023/saar) can then retrieve only the relevant passages instead of loading entire transcripts into an agent's context window.
+
+> [!IMPORTANT]
+> Shruta works only with Microsoft Teams meeting recaps opened in Google Chrome. It does not run inside or capture from the Microsoft Teams desktop application. You can use the desktop app for meetings, but you must open the meeting recap and its Transcript tab in Chrome for Shruta to capture it.
 
 We built this after transcripts and project discussions had grown across too many files to connect reliably by hand. Passing everything to an agent wasted context; selecting files manually was slow and easy to miss. This pipeline keeps the verbatim record available while giving retrieval a compact, traceable layer above it.
 
 ```text
-Teams recap → Chrome capture → raw local file
-                               ├─ timestamped evidence (deterministic)
-                               └─ cited insight note (optional agent)
-                                           ↓
-                                      Saar / MCP
-                                           ↓
-                                        agents
+Teams recap in Chrome → Shruta capture → raw local file
+                                         ├─ timestamped evidence (deterministic)
+                                         └─ cited insight note (optional agent)
+                                                     ↓
+                                                Saar / MCP
+                                                     ↓
+                                                  agents
 ```
 
 ## What we verified
@@ -29,14 +32,16 @@ These are validation results from one environment, not a guarantee that every Te
 Python 3.11 or newer and Chrome are required.
 
 ```bash
-git clone https://github.com/hpandey2023/hf-transcript-capture.git
-cd hf-transcript-capture
+git clone https://github.com/hpandey2023/shruta.git
+cd shruta
 ./scripts/install-macos.sh --workspace "$HOME/Documents/transcript-context"
 ```
 
-The installer creates a dedicated virtual environment, installs a local sweeper, and prints the stable extension folder. Open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select that folder.
+The installer creates a dedicated virtual environment, installs a local sweeper, and prints the stable extension folder. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select that folder.
 
-Open a Teams meeting recap and its Transcript tab. A green `✓` appears when capture finishes. Chrome briefly writes the capture under `Downloads/hf-transcripts/`; the local sweeper moves it into:
+When upgrading from the previous release, load this new extension folder and remove the old unpacked extension after Shruta captures successfully. The installer disables the previous sweeper but leaves existing captures and application files untouched.
+
+In Chrome, open [Teams on the web](https://teams.microsoft.com), then open a meeting recap and its Transcript tab. A green `✓` appears when capture finishes. Chrome briefly writes the capture under `Downloads/shruta-transcripts/`; the local sweeper moves it into:
 
 ```text
 transcript-context/
@@ -48,7 +53,7 @@ transcript-context/
 Run a manual verification at any time:
 
 ```bash
-"$HOME/Library/Application Support/HF Transcript Capture/venv/bin/hf-transcript" \
+"$HOME/Library/Application Support/Shruta/venv/bin/shruta" \
   process "$HOME/Documents/transcript-context/raw" \
   --workspace "$HOME/Documents/transcript-context"
 ```
@@ -60,7 +65,7 @@ The default is evidence-only and does not send transcript text to a model.
 The processor supports Codex CLI, Claude CLI, and OpenAI-compatible endpoints. Enable a provider only after confirming that its data handling is appropriate for the transcripts being processed.
 
 ```bash
-hf-transcript process /path/to/transcript.txt \
+shruta process /path/to/transcript.txt \
   --workspace /path/to/transcript-context \
   --agent codex \
   --model gpt-5.6-terra
@@ -69,7 +74,7 @@ hf-transcript process /path/to/transcript.txt \
 For a local OpenAI-compatible model server:
 
 ```bash
-hf-transcript process /path/to/transcript.txt \
+shruta process /path/to/transcript.txt \
   --workspace /path/to/transcript-context \
   --agent openai-compatible \
   --base-url http://127.0.0.1:11434 \
@@ -100,7 +105,7 @@ MCP makes the tool available; it does not force every agent to call it. Each cli
 
 ## Capture behavior
 
-The extension uses two read-only routes:
+The Chrome extension uses two read-only routes inside Teams web recap pages:
 
 - A network hook mirrors transcript payloads when the recap fetches recognizable VTT or JSON.
 - A DOM scanner handles tenants that render a virtualized transcript inside a cross-origin SharePoint frame. It identifies the transcript scroller, walks from top to bottom, records scan completion, and saves rendered rows locally.
@@ -110,7 +115,7 @@ The service worker keeps only bounded hashes and capture diagnostics in Chrome's
 ## Limits and responsible use
 
 - Use this only for transcripts you are authorized to view and retain.
-- Teams markup can change. A `capture_quality: review` evidence note means the title or scan completeness needs attention.
+- Teams web markup can change. A `capture_quality: review` evidence note means the title or scan completeness needs attention.
 - Capturing what a user can view does not override retention, confidentiality, consent, or records-management rules.
 - Remote agent and embedding providers receive the text they process. The evidence-only processor and Saar's local provider are available when data must remain on the machine.
 

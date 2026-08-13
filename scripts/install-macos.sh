@@ -56,13 +56,15 @@ fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_dir="$(cd "$script_dir/.." && pwd)"
-app_dir="$HOME/Library/Application Support/HF Transcript Capture"
+app_dir="$HOME/Library/Application Support/Shruta"
 venv_dir="$app_dir/venv"
 extension_dir="$app_dir/extension"
-log_dir="$HOME/Library/Logs/HF Transcript Capture"
-download_dir="$HOME/Downloads/hf-transcripts"
-label="io.github.hpandey2023.hf-transcript-sweeper"
+log_dir="$HOME/Library/Logs/Shruta"
+download_dir="$HOME/Downloads/shruta-transcripts"
+label="io.github.hpandey2023.shruta-sweeper"
 plist="$HOME/Library/LaunchAgents/$label.plist"
+legacy_label="io.github.hpandey2023.hf-transcript-sweeper"
+legacy_plist="$HOME/Library/LaunchAgents/$legacy_label.plist"
 
 mkdir -p "$app_dir" "$extension_dir" "$log_dir" "$download_dir" "$workspace/raw"
 python3 -m venv "$venv_dir"
@@ -89,7 +91,7 @@ cat > "$plist" <<EOF
   <string>$label</string>
   <key>ProgramArguments</key>
   <array>
-    <string>$venv_dir/bin/hf-transcript</string>
+    <string>$venv_dir/bin/shruta</string>
     <string>sweep</string>
     <string>--downloads</string>
     <string>$download_dir</string>
@@ -122,15 +124,21 @@ cat > "$plist" <<EOF
 EOF
 
 plutil -lint "$plist" >/dev/null
+launchctl bootout "gui/$UID/$legacy_label" 2>/dev/null || true
+if [[ -f "$legacy_plist" ]]; then
+  mv "$legacy_plist" "$legacy_plist.disabled.$(date +%Y%m%d%H%M%S)"
+fi
 launchctl bootout "gui/$UID/$label" 2>/dev/null || true
 launchctl bootstrap "gui/$UID" "$plist"
 launchctl kickstart -k "gui/$UID/$label"
 
 echo
-echo "Installed HF Transcript Capture."
+echo "Installed Shruta."
 echo "Workspace: $workspace"
-echo "Processor: $venv_dir/bin/hf-transcript"
+echo "Processor: $venv_dir/bin/shruta"
 echo "Agent mode: $agent"
 echo
 echo "Chrome: open chrome://extensions, enable Developer mode, choose Load unpacked, then select:"
 echo "$extension_dir"
+echo
+echo "Shruta captures Teams meeting recaps opened in Chrome; it does not run inside the Teams desktop app."

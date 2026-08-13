@@ -27,7 +27,7 @@ def _add_processing_options(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="hf-transcript")
+    parser = argparse.ArgumentParser(prog="shruta")
     parser.add_argument("--version", action="version", version=__version__)
     subparsers = parser.add_subparsers(dest="command", required=True)
 
@@ -37,7 +37,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     sweep = subparsers.add_parser("sweep", help="Move new Chrome downloads and process them")
     sweep.add_argument(
-        "--downloads", type=Path, default=Path("~/Downloads/hf-transcripts"), help="Capture relay"
+        "--downloads",
+        type=Path,
+        default=Path("~/Downloads/shruta-transcripts"),
+        help="Capture relay",
     )
     sweep.add_argument("--raw-dir", type=Path, help="Raw destination (defaults to workspace/raw)")
     _add_processing_options(sweep)
