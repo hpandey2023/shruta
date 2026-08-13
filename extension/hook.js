@@ -3,8 +3,8 @@
 // mirrored to the extension via window.postMessage. Read-only: never alters
 // the request or the response the page sees.
 (() => {
-  if (window.__hfTcHooked) return;
-  window.__hfTcHooked = true;
+  if (window.__shrutaHooked) return;
+  window.__shrutaHooked = true;
 
   const MAX_BODY = 15 * 1024 * 1024; // 15 MB cap
   const INTERESTING = /transcript|streamcontent|vtt|closedcaption/i;
@@ -14,7 +14,7 @@
     try {
       window.postMessage(
         {
-          __hfTc: true,
+          __shruta: true,
           kind: "net",
           url: String(url),
           contentType: contentType || "",
@@ -54,13 +54,13 @@
   // --- XHR ---
   const origOpen = XMLHttpRequest.prototype.open;
   XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-    this.__hfTcUrl = url;
+    this.__shrutaUrl = url;
     return origOpen.call(this, method, url, ...rest);
   };
   const origSend = XMLHttpRequest.prototype.send;
   XMLHttpRequest.prototype.send = function (...args) {
     try {
-      const url = this.__hfTcUrl;
+      const url = this.__shrutaUrl;
       if (url && INTERESTING.test(String(url))) {
         this.addEventListener("load", () => {
           try {
@@ -87,7 +87,7 @@
   // Announce this frame for diagnostics.
   try {
     window.postMessage(
-      { __hfTc: true, kind: "hello", frameUrl: location.href },
+      { __shruta: true, kind: "hello", frameUrl: location.href },
       "*"
     );
   } catch (e) {}

@@ -5,7 +5,7 @@
 // ---------- relay MAIN-world messages ----------
 window.addEventListener("message", (ev) => {
   const d = ev.data;
-  if (!d || !d.__hfTc || ev.source !== window) return;
+  if (!d || !d.__shruta || ev.source !== window) return;
   try {
     if (d.kind === "net") {
       chrome.runtime.sendMessage({
@@ -271,9 +271,9 @@ function showToast(text, color) {
     el.style.background = color || "#1b5e20";
     el.textContent = text;
     el.style.display = "block";
-    clearTimeout(el.__hfTimer);
+    clearTimeout(el.__shrutaTimer);
     // "capturing…" (amber) can sit until replaced; success (green) auto-hides.
     const hideAfter = (color && color !== "#1b5e20") ? 600000 : 120000;
-    el.__hfTimer = setTimeout(() => (el.style.display = "none"), hideAfter);
+    el.__shrutaTimer = setTimeout(() => (el.style.display = "none"), hideAfter);
   } catch (e) {}
 }

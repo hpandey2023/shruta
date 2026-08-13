@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "HF Transcript Capture",
-  "version": "0.6.0",
-  "description": "Captures Microsoft Teams recap transcripts as local, timestamped source material for retrieval.",
+  "name": "Shruta",
+  "version": "0.7.0",
+  "description": "Captures Microsoft Teams web recap transcripts as local, timestamped source material for retrieval.",
   "permissions": [
     "downloads",
     "storage",
@@ -52,7 +52,7 @@
     }
   ],
   "action": {
-    "default_title": "HF Transcript Capture \u2014 click to force a DOM scan + diagnostics dump",
+    "default_title": "Shruta \u2014 click to force a DOM scan and diagnostics dump",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"

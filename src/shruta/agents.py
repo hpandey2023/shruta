@@ -28,11 +28,9 @@ def run_codex(prompt: str, *, model: str, reasoning: str, timeout: int = 1200) -
     binary = os.environ.get("CODEX_BIN") or shutil.which("codex")
     if not binary:
         raise AgentError("Codex CLI was not found")
-    work_dir = Path(
-        os.environ.get("HF_TRANSCRIPT_AGENT_WORK", "~/.cache/hf-transcript/agent-work")
-    ).expanduser()
+    work_dir = Path(os.environ.get("SHRUTA_AGENT_WORK", "~/.cache/shruta/agent-work")).expanduser()
     work_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(prefix="hf-transcript-", suffix=".md", delete=False) as handle:
+    with tempfile.NamedTemporaryFile(prefix="shruta-", suffix=".md", delete=False) as handle:
         output_path = Path(handle.name)
     command = [
         binary,
@@ -143,23 +141,22 @@ def run_agent(
     if provider == "codex":
         return run_codex(
             prompt,
-            model=model or os.environ.get("HF_TRANSCRIPT_CODEX_MODEL", "gpt-5.6-terra"),
+            model=model or os.environ.get("SHRUTA_CODEX_MODEL", "gpt-5.6-terra"),
             reasoning=reasoning,
             timeout=timeout,
         )
     if provider == "claude":
         return run_claude(
             prompt,
-            model=model or os.environ.get("HF_TRANSCRIPT_CLAUDE_MODEL", "sonnet"),
+            model=model or os.environ.get("SHRUTA_CLAUDE_MODEL", "sonnet"),
             timeout=timeout,
         )
     if provider in {"openai-compatible", "openai_compatible", "local"}:
         return run_openai_compatible(
             prompt,
-            model=model or os.environ.get("HF_TRANSCRIPT_AGENT_MODEL", "qwen3:8b"),
-            base_url=base_url
-            or os.environ.get("HF_TRANSCRIPT_AGENT_BASE_URL", "http://127.0.0.1:11434"),
-            api_key=api_key or os.environ.get("HF_TRANSCRIPT_AGENT_API_KEY"),
+            model=model or os.environ.get("SHRUTA_AGENT_MODEL", "qwen3:8b"),
+            base_url=base_url or os.environ.get("SHRUTA_AGENT_BASE_URL", "http://127.0.0.1:11434"),
+            api_key=api_key or os.environ.get("SHRUTA_AGENT_API_KEY"),
             timeout=timeout,
         )
     raise AgentError(f"unsupported agent provider: {provider}")

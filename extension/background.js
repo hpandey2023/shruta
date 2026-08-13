@@ -1,8 +1,8 @@
 // background.js — service worker. Receives captured payloads, converts them
-// to VTT + a .meta.json sidecar, and saves both to Downloads/hf-transcripts/
-// where the pipeline orchestrator (transcript_fetch.py) sweeps them up.
+// to VTT + a .meta.json sidecar, and saves both to Downloads/shruta-transcripts/
+// where the local Shruta sweeper processes them.
 
-const DIR = "hf-transcripts";
+const DIR = "shruta-transcripts";
 
 // ---------- small utils ----------
 async function fingerprint(value) {
@@ -119,7 +119,7 @@ function turnsToVtt(turns) {
 }
 
 // ---------- capture handling ----------
-const STATE_KEY = "hfTranscriptState";
+const STATE_KEY = "shrutaState";
 const stateStore = chrome.storage.session || chrome.storage.local;
 let state = {
   frames: {},
@@ -213,7 +213,7 @@ async function saveCapture({
     chrome.action.setBadgeBackgroundColor({ color: "#1b5e20", tabId });
   }
   const primaryExt = vtt ? "vtt" : txt ? "txt" : "json";
-  const msg = `HF: transcript captured (${turnCount || "?"} turns, ${source}) → Downloads/${DIR}/${base}.${primaryExt}`;
+  const msg = `Shruta: transcript captured (${turnCount || "?"} turns, ${source}) → Downloads/${DIR}/${base}.${primaryExt}`;
   if (tabId != null) {
     chrome.tabs.sendMessage(tabId, { type: "toast", text: msg, color: "#1b5e20" }).catch(() => {});
   }
@@ -221,7 +221,7 @@ async function saveCapture({
     chrome.notifications.create({
       type: "basic",
       iconUrl: "icons/icon128.png",
-      title: "HF Transcript Capture",
+      title: "Shruta",
       message: msg,
     });
   } catch (e) {}
@@ -264,7 +264,7 @@ async function handleMessage(msg, sender) {
       chrome.action.setBadgeBackgroundColor({ color: "#b26a00", tabId });
       chrome.tabs.sendMessage(tabId, {
         type: "toast",
-        text: "HF: capturing transcript… keep this tab in front; the ✓ appears when it's done (usually 15–60s).",
+        text: "Shruta: capturing transcript… keep this tab in front; the ✓ appears when it's done (usually 15–60s).",
         color: "#b26a00",
       }).catch(() => {});
     }
@@ -331,7 +331,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     .then(() => handleMessage(msg, sender))
     .then(() => sendResponse({ ok: true }))
     .catch((error) => {
-      console.warn("HF Transcript Capture message failed", error);
+      console.warn("Shruta message failed", error);
       sendResponse({ ok: false });
     });
   return true;
@@ -354,7 +354,7 @@ chrome.action.onClicked.addListener(async (tab) => {
   chrome.action.setBadgeBackgroundColor({ color: "#b26a00", tabId: tab.id });
   chrome.tabs.sendMessage(tab.id, {
     type: "toast",
-    text: "HF: scanning this page for a transcript… keep it in front.",
+    text: "Shruta: scanning this page for a transcript… keep it in front.",
     color: "#b26a00",
   }).catch(() => {});
   chrome.tabs.sendMessage(tab.id, { type: "dom-scan" }).catch(() => {});

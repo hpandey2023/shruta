@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from hf_transcript.parser import (
+from shruta.parser import (
     parse_capture,
     parse_dom_timestamp_rows,
     parse_json,

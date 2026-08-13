@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from hf_transcript.models import ParsedTranscript, TranscriptTurn
-from hf_transcript.pipeline import iter_captures, process_capture, validate_agent_output
+from shruta.models import ParsedTranscript, TranscriptTurn
+from shruta.pipeline import iter_captures, process_capture, validate_agent_output
 
 
 def _write_capture(raw_dir: Path, stem: str) -> Path:
