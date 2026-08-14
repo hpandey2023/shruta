@@ -3,8 +3,11 @@
 // mirrored to the extension via window.postMessage. Read-only: never alters
 // the request or the response the page sees.
 (() => {
-  if (window.__shrutaHooked) return;
+  // Accept the legacy marker too. An already-open Teams tab can retain the
+  // previous MAIN-world hook briefly while the unpacked extension reloads.
+  if (window.__shrutaHooked || window.__hfTcHooked) return;
   window.__shrutaHooked = true;
+  window.__hfTcHooked = true;
 
   const MAX_BODY = 15 * 1024 * 1024; // 15 MB cap
   const INTERESTING = /transcript|streamcontent|vtt|closedcaption/i;
@@ -15,6 +18,7 @@
       window.postMessage(
         {
           __shruta: true,
+          __hfTc: true,
           kind: "net",
           url: String(url),
           contentType: contentType || "",
@@ -87,7 +91,7 @@
   // Announce this frame for diagnostics.
   try {
     window.postMessage(
-      { __shruta: true, kind: "hello", frameUrl: location.href },
+      { __shruta: true, __hfTc: true, kind: "hello", frameUrl: location.href },
       "*"
     );
   } catch (e) {}

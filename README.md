@@ -41,7 +41,7 @@ The installer creates a dedicated virtual environment, installs a local sweeper,
 
 When upgrading from the previous release, load this new extension folder and remove the old unpacked extension after Shruta captures successfully. The installer disables the previous sweeper but leaves existing captures and application files untouched.
 
-In Chrome, open [Teams on the web](https://teams.microsoft.com), then open a meeting recap and its Transcript tab. A green `✓` appears when capture finishes. Chrome briefly writes the capture under `Downloads/shruta-transcripts/`; the local sweeper moves it into:
+In Chrome, open [Teams on the web](https://teams.microsoft.com), then open a meeting recap and its Transcript tab. Keep that tab open while Shruta scrolls the full transcript; a green `✓` appears only after the scan reaches the end. Chrome briefly writes the capture under `Downloads/shruta-transcripts/`; the local sweeper moves it into:
 
 ```text
 transcript-context/
