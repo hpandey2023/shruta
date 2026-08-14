@@ -193,7 +193,11 @@ async function saveCapture({
     turnCount: turnCount || 0,
     firstTimestamp: scanStats && scanStats.firstTimestamp || "",
     lastTimestamp: scanStats && scanStats.lastTimestamp || "",
+    scanComplete: scanStats ? Boolean(scanStats.complete) : null,
+    foundScroller: scanStats ? Boolean(scanStats.foundScroller) : null,
+    startedAtTop: scanStats ? Boolean(scanStats.startedAtTop) : null,
     reachedBottom: scanStats ? Boolean(scanStats.reachedBottom) : null,
+    scrollRange: scanStats && scanStats.scrollRange || 0,
     scanSteps: scanStats && scanStats.steps || 0,
   };
   // Write the meta sidecar FIRST, transcript LAST. The folder-watcher fires on
@@ -301,6 +305,18 @@ async function handleMessage(msg, sender) {
 
   if (msg.type === "dom-result") {
     if (!msg.turns || msg.turns.length === 0) return;
+    if (msg.scanStats && msg.scanStats.complete === false) {
+      if (tabId != null) {
+        chrome.action.setBadgeText({ text: "!", tabId });
+        chrome.action.setBadgeBackgroundColor({ color: "#b3261e", tabId });
+        chrome.tabs.sendMessage(tabId, {
+          type: "toast",
+          text: "Shruta: capture was incomplete and was not saved. Keep the Transcript tab open, then click Shruta to retry.",
+          color: "#b3261e",
+        }).catch(() => {});
+      }
+      return;
+    }
     // If the network hook already captured this tab, the DOM scan is a
     // lower-quality duplicate — drop it.
     if (tabId != null && state.lastNet[tabId] &&
@@ -347,7 +363,8 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   });
 });
 
-// Toolbar click: force a DOM scan in every frame + drop a diagnostics dump.
+// Toolbar click: force a DOM scan. Diagnostics remain in extension state and
+// are not downloaded during normal use, avoiding an unnecessary save prompt.
 chrome.action.onClicked.addListener(async (tab) => {
   await stateReady;
   chrome.action.setBadgeText({ text: "…", tabId: tab.id });
@@ -358,14 +375,4 @@ chrome.action.onClicked.addListener(async (tab) => {
     color: "#b26a00",
   }).catch(() => {});
   chrome.tabs.sendMessage(tab.id, { type: "dom-scan" }).catch(() => {});
-  const diag = {
-    at: new Date().toISOString(),
-    tab: { id: tab.id, title: tab.title, url: tab.url },
-    framesSeen: Object.fromEntries(
-      Object.entries(state.frames).map(([k, v]) => [k, Array.from(v)])
-    ),
-    interestingNetworkResponses: state.netSeen.slice(-50),
-    captures: state.captures,
-  };
-  download(`_diagnostics_${ts()}.json`, "application/json", JSON.stringify(diag, null, 2));
 });

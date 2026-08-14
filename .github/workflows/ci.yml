@@ -32,6 +32,7 @@ jobs:
       - run: node --check extension/background.js
       - run: node --check extension/capture.js
       - run: node --check extension/hook.js
+      - run: node --test extension/tests/*.test.cjs
 
   package:
     runs-on: ubuntu-latest

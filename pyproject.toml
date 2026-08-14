@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "shruta-transcript"
-version = "0.7.0"
+version = "0.7.2"
 description = "Capture Teams web transcripts, turn them into cited evidence, and prepare them for retrieval."
 readme = "README.md"
 requires-python = ">=3.11"

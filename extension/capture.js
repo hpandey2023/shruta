@@ -5,7 +5,9 @@
 // ---------- relay MAIN-world messages ----------
 window.addEventListener("message", (ev) => {
   const d = ev.data;
-  if (!d || !d.__shruta || ev.source !== window) return;
+  // Keep the legacy marker compatible with Teams tabs that were already open
+  // while an unpacked extension update was reloaded.
+  if (!d || (!d.__shruta && !d.__hfTc) || ev.source !== window) return;
   try {
     if (d.kind === "net") {
       chrome.runtime.sendMessage({
@@ -75,6 +77,72 @@ if (window === window.top) {
 // (plus diagnostics) if the payload route fails.
 const TIME_RE = /^\d{1,2}:\d{2}(:\d{2})?$/;
 
+function looksLikeTranscriptFrame() {
+  return Boolean(
+    document.querySelector(
+      '#OneTranscript, [data-testid="transcript-list-wrapper"], ' +
+      '[data-tid="transcript-list-wrapper"], ' +
+      '[data-testid="scroll-to-target-targeted-focus-zone"], ' +
+      '[data-tid="scroll-to-target-targeted-focus-zone"]'
+    ) || /xplatplugins|transcript/i.test(location.pathname)
+  );
+}
+
+function timestampElements() {
+  return Array.from(document.querySelectorAll('[id*="timestamp" i], time, span, div')).filter((el) => {
+    const text = (el.textContent || "").trim();
+    if (!TIME_RE.test(text)) return false;
+    // Pick the smallest element carrying the timestamp. Teams occasionally
+    // wraps it in another span, so childElementCount is not reliable.
+    return !Array.from(el.children || []).some((child) =>
+      TIME_RE.test((child.textContent || "").trim())
+    );
+  });
+}
+
+function findTranscriptScroller() {
+  // Current Teams recap markup. Select it directly before using heuristics.
+  const explicit = document.querySelector(
+    '#scrollToTargetTargetedFocusZone, ' +
+    '[data-testid="scroll-to-target-targeted-focus-zone"], ' +
+    '[data-tid="scroll-to-target-targeted-focus-zone"]'
+  );
+  if (explicit && explicit.clientHeight > 80) return explicit;
+
+  // Walk far enough to reach the virtual-list scroller. The previous limit of
+  // ten ancestors stopped one element too early in Teams' current DOM.
+  const scores = new Map();
+  for (const timeEl of timestampElements()) {
+    let ancestor = timeEl.parentElement;
+    for (let depth = 0; ancestor && depth < 20; depth++, ancestor = ancestor.parentElement) {
+      const overflowY = getComputedStyle(ancestor).overflowY;
+      if (
+        /auto|scroll/.test(overflowY) &&
+        ancestor.scrollHeight >= ancestor.clientHeight &&
+        ancestor.clientHeight > 80
+      ) {
+        scores.set(ancestor, (scores.get(ancestor) || 0) + 1);
+      }
+    }
+  }
+  const scored = Array.from(scores.entries()).sort(
+    (a, b) => b[1] - a[1] ||
+      (b[0].scrollHeight - b[0].clientHeight) - (a[0].scrollHeight - a[0].clientHeight)
+  )[0]?.[0];
+  if (scored) return scored;
+
+  // Compatibility fallback for older Teams markup: the known-good v0.5
+  // scanner used the tallest scrollable container inside the transcript frame.
+  if (!looksLikeTranscriptFrame()) return null;
+  return Array.from(document.querySelectorAll("*")).filter((el) => {
+    const overflowY = getComputedStyle(el).overflowY;
+    return /auto|scroll/.test(overflowY) &&
+      el.scrollHeight > el.clientHeight + 20 && el.clientHeight > 80;
+  }).sort((a, b) =>
+    (b.scrollHeight - b.clientHeight) - (a.scrollHeight - a.clientHeight)
+  )[0] || null;
+}
+
 function scanTranscriptDom() {
   // Strategy 1: explicit transcript markers Teams tends to use.
   const marked = document.querySelectorAll(
@@ -119,23 +187,7 @@ function scanTranscriptDom() {
 }
 
 async function autoScrollAndScan() {
-  // Score scrollable ancestors by how many visible timestamp elements they
-  // contain. The tallest element is often the whole recap page, not the
-  // virtualized transcript list.
-  const scores = new Map();
-  const visibleTimes = Array.from(document.querySelectorAll("span,div")).filter(
-    (el) => el.childElementCount === 0 && TIME_RE.test((el.textContent || "").trim())
-  );
-  for (const timeEl of visibleTimes) {
-    let ancestor = timeEl.parentElement;
-    for (let depth = 0; ancestor && depth < 10; depth++, ancestor = ancestor.parentElement) {
-      if (ancestor.scrollHeight > ancestor.clientHeight + 100 && ancestor.clientHeight > 120) {
-        scores.set(ancestor, (scores.get(ancestor) || 0) + 1);
-      }
-    }
-  }
-  const sc = Array.from(scores.entries())
-    .sort((a, b) => b[1] - a[1] || b[0].scrollHeight - a[0].scrollHeight)[0]?.[0] || null;
+  const sc = findTranscriptScroller();
   const all = [];
   const seen = new Set();
   const collect = () => {
@@ -150,20 +202,26 @@ async function autoScrollAndScan() {
   };
   let method = collect();
   let steps = 0;
-  let reachedBottom = !sc;
+  let reachedBottom = false;
+  let startedAtTop = false;
+  let scrollRange = 0;
   if (sc) {
     sc.scrollTop = 0;
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 700));
+    startedAtTop = sc.scrollTop <= 2;
     method = collect();
+    scrollRange = Math.max(0, sc.scrollHeight - sc.clientHeight);
     let bottomWithoutGrowth = 0;
-    // The bound is a safety valve. At 450ms per step it allows long meetings
-    // while normal 30–60 minute transcripts finish in under a minute.
+    if (scrollRange <= 2) reachedBottom = true;
+    // The bound is a safety valve. The slower cadence gives Teams' virtualized
+    // list time to replace its rows before the next sample.
     for (let i = 0; i < 600; i++) {
+      if (reachedBottom) break;
       steps++;
       const before = seen.size;
       const maxScroll = Math.max(0, sc.scrollHeight - sc.clientHeight);
-      sc.scrollTop = Math.min(maxScroll, sc.scrollTop + Math.floor(sc.clientHeight * 0.85));
-      await new Promise((r) => setTimeout(r, 450));
+      sc.scrollTop = Math.min(maxScroll, sc.scrollTop + Math.floor(sc.clientHeight * 0.75));
+      await new Promise((r) => setTimeout(r, 700));
       collect();
       const atBottom = sc.scrollTop >= Math.max(0, sc.scrollHeight - sc.clientHeight - 2);
       bottomWithoutGrowth = atBottom && seen.size === before ? bottomWithoutGrowth + 1 : 0;
@@ -174,7 +232,7 @@ async function autoScrollAndScan() {
     }
     // Force a final bottom sample in case the list expanded during the scan.
     sc.scrollTop = sc.scrollHeight;
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 700));
     collect();
     reachedBottom = reachedBottom || sc.scrollTop >= sc.scrollHeight - sc.clientHeight - 2;
   }
@@ -196,7 +254,11 @@ async function autoScrollAndScan() {
     scanStats: {
       firstTimestamp: clocks[0]?.clock || "",
       lastTimestamp: clocks[clocks.length - 1]?.clock || "",
+      foundScroller: Boolean(sc),
+      startedAtTop,
       reachedBottom,
+      complete: Boolean(sc) && startedAtTop && reachedBottom,
+      scrollRange,
       steps,
     },
   };
@@ -217,7 +279,16 @@ if (window !== window.top) {
       return;
     }
     const probe = scanTranscriptDom();
-    if (probe.turns.length >= 3) {
+    const visibleTimestamps = timestampElements().length;
+    // Teams now initially exposes the rendered transcript as one large text
+    // block, so probe.turns can be 1 even when many timestamped rows are on
+    // screen. The explicit transcript frame + scroller guards prevent the
+    // top-frame chat false positive that the old 15-row threshold avoided.
+    if (
+      looksLikeTranscriptFrame() &&
+      findTranscriptScroller() &&
+      (visibleTimestamps >= 3 || probe.turns.length >= 3)
+    ) {
       autoScanStarted = true;
       clearInterval(probeTimer);
       // Tell the user we're on it (amber badge + toast via background).
@@ -237,6 +308,12 @@ if (window !== window.top) {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg && msg.type === "dom-scan") {
+    // The Teams shell contains chat timestamps and must never be mistaken for
+    // the recap transcript. Only scan the actual transcript frame.
+    if (!looksLikeTranscriptFrame()) {
+      sendResponse({ ack: false, frameUrl: location.href, reason: "not-transcript-frame" });
+      return false;
+    }
     autoScrollAndScan().then((result) => {
       try {
         chrome.runtime.sendMessage({ type: "dom-result", ...result });
